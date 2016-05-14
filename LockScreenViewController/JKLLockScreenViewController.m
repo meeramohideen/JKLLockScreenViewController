@@ -129,11 +129,11 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
     // 너무 빨리 dimiss되면 잔상처럼 남으므로 일정시간 딜레이 걸어서 dismiss 함
     dispatch_time_t delayInSeconds = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
     dispatch_after(delayInSeconds, dispatch_get_main_queue(), ^(void){
-        [self dismissViewControllerAnimated:NO completion:^{
+        //[self dismissViewControllerAnimated:NO completion:^{
             if ([_delegate respondsToSelector:@selector(unlockWasSuccessfulLockScreenViewController:)]) {
                 [_delegate unlockWasSuccessfulLockScreenViewController:weakSelf];
             }
-        }];
+        //}];
     });
 }
 
@@ -168,11 +168,11 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
  @param NSString PIN code
  */
 - (void)lsv_unlockScreenSuccessful:(NSString *)pincode {
-    [self dismissViewControllerAnimated:NO completion:^{
+    //[self dismissViewControllerAnimated:NO completion:^{
         if ([_delegate respondsToSelector:@selector(unlockWasSuccessfulLockScreenViewController:pincode:)]) {
             [_delegate unlockWasSuccessfulLockScreenViewController:self pincode:pincode];
         }
-    }];
+    //}];
 }
 
 /**
@@ -294,7 +294,7 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
         [_delegate unlockWasCancelledLockScreenViewController:self];
     }
     
-    [self dismissViewControllerAnimated:YES completion:NULL];
+    //[self dismissViewControllerAnimated:YES completion:NULL];
 }
 
 - (IBAction)onDeleteClicked:(id)sender {
