@@ -13,6 +13,7 @@
 static const NSTimeInterval LSVSwipeAnimationDuration = 0.3f;
 static const NSTimeInterval LSVDismissWaitingDuration = 0.4f;
 static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
+static const NSTimeInterval LSSubTitleDuration = 1.0f;
 
 @interface JKLLockScreenViewController()<JKLLockScreenPincodeViewDelegate> {
     
@@ -41,22 +42,32 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
         case LockScreenModeNormal: {
             // [일반 모드] Cancel 버튼 감춤
             [_cancelButton setHidden:YES];
+            
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter Passcode",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"", @"JKLockScreen", nil)];
         }
+            break;
+            
         case LockScreenModeNew: {
             // [신규 모드]
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Pincode Title",    @"JKLockScreen", nil)
-                         subtitle:NSLocalizedStringFromTable(@"Pincode Subtitle", @"JKLockScreen", nil)];
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
             
             break;
         }
         case LockScreenModeChange:
             // [변경 모드]
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Pincode Title",    @"JKLockScreen", nil)
-                         subtitle:NSLocalizedStringFromTable(@"New Pincode Subtitle", @"JKLockScreen", nil)];
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+            break;
+            
+        case LockScreenModeConfirmOldPwdAndChange:
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Old Passcode",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your old passcode", @"JKLockScreen", nil)];
             break;
     }
     
-    if (_tintColor) [self tintSubviewsWithColor:_tintColor];
+    if (_tntColor) [self tintSubviewsWithColor:_tntColor];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -87,6 +98,73 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
         [number setTintColor:color];
     }
 }
+
+- (void)tempColorWithAnimationForFailure: (UIColor *) color{
+    
+    // cancel btn
+    [UIView transitionWithView:_cancelButton duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+        
+        [_cancelButton setTitleColor:color forState:UIControlStateNormal];
+        [_cancelButton layoutIfNeeded];
+        
+    } completion:^(BOOL finished) {
+        
+        [UIView transitionWithView:_cancelButton duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+            
+            [_cancelButton setTitleColor:_tntColor forState:UIControlStateNormal];
+            [_cancelButton layoutIfNeeded];
+            
+        } completion:nil];
+    }];
+    
+    // delete btn
+    [UIView transitionWithView:_deleteButton duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+        
+        [_deleteButton setTitleColor:color forState:UIControlStateNormal];
+        [_deleteButton layoutIfNeeded];
+        
+    } completion:^(BOOL finished) {
+        [UIView transitionWithView:_deleteButton duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+            
+            [_deleteButton setTitleColor:_tntColor forState:UIControlStateNormal];
+            [_deleteButton layoutIfNeeded];
+            
+        } completion:nil];
+    }];
+    
+    // pincode view
+    [UIView transitionWithView:_pincodeView duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+        
+        [_pincodeView setPincodeColor:color];
+        [_pincodeView layoutIfNeeded];
+        
+    } completion:^(BOOL finished) {
+        [UIView transitionWithView:_pincodeView duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+            
+            [_pincodeView setPincodeColor:_tntColor];
+            [_pincodeView layoutIfNeeded];
+            
+        } completion:nil];
+    }];
+    
+    // numbers btn
+    //    for (JKLLockScreenNumber * number in _numberButtons)
+    //    {
+    //
+    //        [UIView transitionWithView:number duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+    //
+    //            [number setTintColor:color];
+    //
+    //        } completion:^(BOOL finished) {
+    //            [UIView transitionWithView:number duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+    //
+    //                [number setTintColor:_tintColor];
+    //
+    //            } completion:nil];
+    //        }];
+    //    }
+}
+
 
 /**
  Touch ID 창을 호출하는 메소드
@@ -130,9 +208,9 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
     dispatch_time_t delayInSeconds = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
     dispatch_after(delayInSeconds, dispatch_get_main_queue(), ^(void){
         //[self dismissViewControllerAnimated:NO completion:^{
-            if ([_delegate respondsToSelector:@selector(unlockWasSuccessfulLockScreenViewController:)]) {
-                [_delegate unlockWasSuccessfulLockScreenViewController:weakSelf];
-            }
+        if ([_delegate respondsToSelector:@selector(unlockWasSuccessfulLockScreenViewController:)]) {
+            [_delegate unlockWasSuccessfulLockScreenViewController:weakSelf];
+        }
         //}];
     });
 }
@@ -169,9 +247,9 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
  */
 - (void)lsv_unlockScreenSuccessful:(NSString *)pincode {
     //[self dismissViewControllerAnimated:NO completion:^{
-        if ([_delegate respondsToSelector:@selector(unlockWasSuccessfulLockScreenViewController:pincode:)]) {
-            [_delegate unlockWasSuccessfulLockScreenViewController:self pincode:pincode];
-        }
+    if ([_delegate respondsToSelector:@selector(unlockWasSuccessfulLockScreenViewController:pincode:)]) {
+        [_delegate unlockWasSuccessfulLockScreenViewController:self pincode:pincode];
+    }
     //}];
 }
 
@@ -179,6 +257,9 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
  잠금 해제에 실패했을 경우 발생하는 메소드
  */
 - (void)lsv_unlockScreenFailure {
+    
+    //[self tempColorWithAnimationForFailure:[UIColor redColor]];
+    
     if (_lockScreenMode != LockScreenModeVerification) {
         if ([_delegate respondsToSelector:@selector(unlockWasFailureLockScreenViewController:)]) {
             [_delegate unlockWasFailureLockScreenViewController:self];
@@ -192,27 +273,48 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
     CAAnimation * shake = [self lsv_makeShakeAnimation];
     [_pincodeView.layer addAnimation:shake forKey:@"shake"];
     [_pincodeView setEnabled:NO];
-    [_subtitleLabel setText:NSLocalizedStringFromTable(@"Pincode Not Match Title", @"JKLockScreen", nil)];
+    
+    _subtitleLabel.textColor = [UIColor redColor];
+    if (_lockScreenMode == LockScreenModeChange || _lockScreenMode == LockScreenModeNew) {
+        [_subtitleLabel setText:NSLocalizedStringFromTable(@"Passcode did not match. Try again.", @"JKLockScreen", nil)];
+    } else {
+        [_subtitleLabel setText:NSLocalizedStringFromTable(@"Incorrect passcode", @"JKLockScreen", nil)];
+    }
     
     dispatch_time_t delayInSeconds = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(LSVShakeAnimationDuration * NSEC_PER_SEC));
     dispatch_after(delayInSeconds, dispatch_get_main_queue(), ^(void){
         [_pincodeView setEnabled:YES];
         [_pincodeView initPincode];
+    });
+    
+    dispatch_time_t delayInSecondsSubTitle = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(LSSubTitleDuration * NSEC_PER_SEC));
+    dispatch_after(delayInSecondsSubTitle, dispatch_get_main_queue(), ^(void){
+        _subtitleLabel.textColor = [UIColor blackColor];
         
         switch (_lockScreenMode) {
             case LockScreenModeNormal:
-            case LockScreenModeNew: {
-                // [신규 모드]
-                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Pincode Title",    @"JKLockScreen", nil)
-                             subtitle:NSLocalizedStringFromTable(@"Pincode Subtitle", @"JKLockScreen", nil)];
+                
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter Passcode",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"", @"JKLockScreen", nil)];
                 
                 break;
-            }
+                
+            case LockScreenModeNew:
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+                break;
+                
             case LockScreenModeChange:
                 // [변경 모드]
-                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Pincode Title",    @"JKLockScreen", nil)
-                             subtitle:NSLocalizedStringFromTable(@"New Pincode Subtitle", @"JKLockScreen", nil)];
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
                 break;
+                
+            case LockScreenModeConfirmOldPwdAndChange:
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Old Passcode",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"Enter your old passcode", @"JKLockScreen", nil)];
+                break;
+                
             default:
                 break;
         }
@@ -325,22 +427,36 @@ static const NSTimeInterval LSVShakeAnimationDuration = 0.5f;
             [self lsv_unlockScreenFailure];
         }
     }
-    else {
+    else if (_lockScreenMode == LockScreenModeChange || _lockScreenMode == LockScreenModeNew) {
         // [신규 모드], [변경 모드]
         _confirmPincode = pincode;
         _prevLockScreenMode = _lockScreenMode;
         [self setLockScreenMode:LockScreenModeVerification];
         
         // 재입력 타이틀로 전환
-        [self lsv_updateTitle:NSLocalizedStringFromTable(@"Pincode Title Confirm",    @"JKLockScreen", nil)
-                     subtitle:NSLocalizedStringFromTable(@"Pincode Subtitle Confirm", @"JKLockScreen", nil)];
+        [self lsv_updateTitle:NSLocalizedStringFromTable(@"Confirm passcode",    @"JKLockScreen", nil)
+                     subtitle:NSLocalizedStringFromTable(@"Re-enter your new passcode", @"JKLockScreen", nil)];
         
         // 서브타이틀과 pincodeviw 이동 애니메이션
         [self lsv_swipeSubtitleAndPincodeView];
     }
+    else if (_lockScreenMode == LockScreenModeConfirmOldPwdAndChange) {
+        
+        if ([self lsv_isPincodeValid:pincode]) {
+            
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+            
+            [self setLockScreenMode:LockScreenModeChange];
+            [self lsv_swipeSubtitleAndPincodeView];
+        } else {
+            
+            [self lsv_unlockScreenFailure];
+        }
+    }
 }
 
-#pragma mark - 
+#pragma mark -
 #pragma mark LockScreenViewController Orientation
 - (BOOL)shouldAutorotate {
     return YES;

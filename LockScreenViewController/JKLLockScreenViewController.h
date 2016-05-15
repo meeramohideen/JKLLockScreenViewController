@@ -15,6 +15,7 @@ typedef NS_ENUM(NSInteger, LockScreenMode) {
     LockScreenModeNew,              // [신규 모드]
     LockScreenModeChange,           // [변경 모드]
     LockScreenModeVerification,     // [확인 모드]
+    LockScreenModeConfirmOldPwdAndChange,
 };
 
 @protocol JKLLockScreenViewControllerDelegate;
@@ -29,7 +30,7 @@ typedef NS_ENUM(NSInteger, LockScreenMode) {
 /**
  *  Tint color for the buttons
  */
-@property (nonatomic, weak) UIColor *tintColor;
+@property (nonatomic, strong) UIColor *tntColor;
 
 @end
 
