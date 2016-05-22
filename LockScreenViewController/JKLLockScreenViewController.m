@@ -38,32 +38,38 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
     [super viewDidLoad];
     
     switch (_lockScreenMode) {
+            
         case LockScreenModeVerification:
         case LockScreenModeNormal: {
             // [일반 모드] Cancel 버튼 감춤
             [_cancelButton setHidden:YES];
             
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter Passcode",    @"JKLockScreen", nil)
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter PIN",    @"JKLockScreen", nil)
                          subtitle:NSLocalizedStringFromTable(@"", @"JKLockScreen", nil)];
         }
             break;
             
+        case LockScreenModeAskPINInternally:
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter PIN",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"", @"JKLockScreen", nil)];
+            break;
+            
         case LockScreenModeNew: {
             // [신규 모드]
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
-                         subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New PIN",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your new PIN", @"JKLockScreen", nil)];
             
             break;
         }
         case LockScreenModeChange:
             // [변경 모드]
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
-                         subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New PIN",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your new PIN", @"JKLockScreen", nil)];
             break;
             
         case LockScreenModeConfirmOldPwdAndChange:
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Old Passcode",    @"JKLockScreen", nil)
-                         subtitle:NSLocalizedStringFromTable(@"Enter your old passcode", @"JKLockScreen", nil)];
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"Old PIN",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your old PIN", @"JKLockScreen", nil)];
             break;
     }
     
@@ -178,7 +184,7 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
     if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error]) {
         // evaluate
         [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics
-                localizedReason:NSLocalizedStringFromTable(@"Pincode TouchID", @"JKLockScreen", nil)
+                localizedReason:NSLocalizedStringFromTable(@"Unlock Authenticator", @"JKLockScreen", nil)
                           reply:^(BOOL success, NSError * authenticationError) {
                               if (success) {
                                   [self lsv_unlockDelayDismissViewController:LSVDismissWaitingDuration];
@@ -276,9 +282,9 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
     
     _subtitleLabel.textColor = [UIColor redColor];
     if (_lockScreenMode == LockScreenModeChange || _lockScreenMode == LockScreenModeNew) {
-        [_subtitleLabel setText:NSLocalizedStringFromTable(@"Passcode did not match. Try again.", @"JKLockScreen", nil)];
+        [_subtitleLabel setText:NSLocalizedStringFromTable(@"PIN did not match. Try again.", @"JKLockScreen", nil)];
     } else {
-        [_subtitleLabel setText:NSLocalizedStringFromTable(@"Incorrect passcode", @"JKLockScreen", nil)];
+        [_subtitleLabel setText:NSLocalizedStringFromTable(@"Incorrect PIN", @"JKLockScreen", nil)];
     }
     
     dispatch_time_t delayInSeconds = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(LSVShakeAnimationDuration * NSEC_PER_SEC));
@@ -293,26 +299,27 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
         
         switch (_lockScreenMode) {
             case LockScreenModeNormal:
+            case LockScreenModeAskPINInternally:
                 
-                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter Passcode",    @"JKLockScreen", nil)
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter PIN",    @"JKLockScreen", nil)
                              subtitle:NSLocalizedStringFromTable(@"", @"JKLockScreen", nil)];
                 
                 break;
                 
             case LockScreenModeNew:
-                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
-                             subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New PIN",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"Enter your new PIN", @"JKLockScreen", nil)];
                 break;
                 
             case LockScreenModeChange:
                 // [변경 모드]
-                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
-                             subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"New PIN",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"Enter your new PIN", @"JKLockScreen", nil)];
                 break;
                 
             case LockScreenModeConfirmOldPwdAndChange:
-                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Old Passcode",    @"JKLockScreen", nil)
-                             subtitle:NSLocalizedStringFromTable(@"Enter your old passcode", @"JKLockScreen", nil)];
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Old PIN",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"Enter your old PIN", @"JKLockScreen", nil)];
                 break;
                 
             default:
@@ -408,9 +415,14 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
 #pragma mark JKLLockScreenPincodeViewDelegate
 - (void)lockScreenPincodeView:(JKLLockScreenPincodeView *)lockScreenPincodeView pincode:(NSString *)pincode {
     
-    if (_lockScreenMode == LockScreenModeNormal) {
+    if (_lockScreenMode == LockScreenModeNormal || _lockScreenMode == LockScreenModeAskPINInternally) {
         // [일반 모드]
         if ([self lsv_isPincodeValid:pincode]) {
+            
+            if (_lockScreenMode == LockScreenModeAskPINInternally) {
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Enter PIN",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"PIN lock disabled successfully", @"JKLockScreen", nil)];
+            }
             [self lsv_unlockScreenSuccessful:pincode];
         }
         else {
@@ -419,6 +431,16 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
     } else if (_lockScreenMode == LockScreenModeVerification) {
         // [확인 모드]
         if ([self lsv_isPincodeValid:pincode]) {
+            
+            if (_prevLockScreenMode == LockScreenModeNew) {
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Confirm PIN",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"PIN lock enabled successfully", @"JKLockScreen", nil)];
+            }
+            else {
+                [self lsv_updateTitle:NSLocalizedStringFromTable(@"Confirm PIN",    @"JKLockScreen", nil)
+                             subtitle:NSLocalizedStringFromTable(@"PIN Updated", @"JKLockScreen", nil)];
+            }
+            
             [self setLockScreenMode:_prevLockScreenMode];
             [self lsv_unlockScreenSuccessful:pincode];
         }
@@ -434,8 +456,8 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
         [self setLockScreenMode:LockScreenModeVerification];
         
         // 재입력 타이틀로 전환
-        [self lsv_updateTitle:NSLocalizedStringFromTable(@"Confirm passcode",    @"JKLockScreen", nil)
-                     subtitle:NSLocalizedStringFromTable(@"Re-enter your new passcode", @"JKLockScreen", nil)];
+        [self lsv_updateTitle:NSLocalizedStringFromTable(@"Confirm PIN",    @"JKLockScreen", nil)
+                     subtitle:NSLocalizedStringFromTable(@"Re-enter your new PIN", @"JKLockScreen", nil)];
         
         // 서브타이틀과 pincodeviw 이동 애니메이션
         [self lsv_swipeSubtitleAndPincodeView];
@@ -444,8 +466,8 @@ static const NSTimeInterval LSSubTitleDuration = 1.0f;
         
         if ([self lsv_isPincodeValid:pincode]) {
             
-            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New Passcode",    @"JKLockScreen", nil)
-                         subtitle:NSLocalizedStringFromTable(@"Enter your new passcode", @"JKLockScreen", nil)];
+            [self lsv_updateTitle:NSLocalizedStringFromTable(@"New PIN",    @"JKLockScreen", nil)
+                         subtitle:NSLocalizedStringFromTable(@"Enter your new PIN", @"JKLockScreen", nil)];
             
             [self setLockScreenMode:LockScreenModeChange];
             [self lsv_swipeSubtitleAndPincodeView];
